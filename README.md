@@ -36,7 +36,7 @@ A robust Discord bot that manages allowlist applications with:
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/allowlist-bot.git
+   git clone https://github.com/allowlist-bot-discord/allowlist-bot.git
    cd allowlist-bot
 
 ## Usage
