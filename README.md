@@ -49,3 +49,15 @@ A robust Discord bot that manages allowlist applications with:
 | `!cooldown_exempt @user [add/remove]`       | Manage cooldown exemptions         | Admin/Cooldown Channel     |
 | `!list_exempt`                              | Show cooldown-exempt users         | Admin                      |
 | `!check_role_hierarchy`                     | Verify role permissions            | Admin                      |
+
+## License
+
+[MIT License](LICENSE)
+
+## Support
+
+If you encounter any issues or have questions, please open an issue on this repository.
+
+---
+
+Created with ❤️ for Discord communities.
