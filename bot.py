@@ -115,14 +115,24 @@ async def create_user_response_embed(title: str, description: str, color: discor
 # Database Functions
 async def create_db_pool():
     global pool
-    pool = await asyncpg.create_pool(
-        DATABASE_URL, 
-        min_size=3,  # Reduced from 5 to better suit your server specs
-        max_size=10,  # Reduced from 20
-        command_timeout=30,
-        max_inactive_connection_lifetime=300
-    )
-    logger.info("Database pool created")
+    try:
+        pool = await asyncpg.create_pool(
+            DATABASE_URL, 
+            min_size=1,  # Start with just 1 connection
+            max_size=5,  # Small pool size for Render's free tier
+            command_timeout=30,
+            max_inactive_connection_lifetime=60,
+            server_settings={
+                'application_name': 'discord-bot'
+            }
+        )
+        # Test the connection
+        async with pool.acquire() as conn:
+            await conn.execute("SELECT 1")
+        logger.info("Database pool created successfully")
+    except Exception as e:
+        logger.critical(f"Failed to create database pool: {e}")
+        raise
 
 async def init_db():
     async with pool.acquire() as conn:
@@ -812,10 +822,26 @@ class ConfirmView(discord.ui.View):
         self.value = False
         self.stop()
 
+async def wait_for_db(max_retries=5, delay=5):
+    retries = 0
+    while retries < max_retries:
+        try:
+            await create_db_pool()
+            return True
+        except Exception as e:
+            retries += 1
+            logger.warning(f"Database connection failed (attempt {retries}/{max_retries}): {e}")
+            if retries < max_retries:
+                await asyncio.sleep(delay)
+    return False
+
 # Main Function
 async def main():
     try:
-        await create_db_pool()
+        if not await wait_for_db():
+            logger.critical("Could not establish database connection after multiple attempts")
+            return
+
         await bot.start(os.getenv('DISCORD_TOKEN'))
     except Exception as e:
         logger.critical(f"Bot crashed: {e}", exc_info=True)
