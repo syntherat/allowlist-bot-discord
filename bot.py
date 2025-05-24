@@ -8,10 +8,18 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
 from io import StringIO
+from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
+import uvicorn
 
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
+
+app = FastAPI()
+@app.get("/")
+async def health_check():
+    return PlainTextResponse("Bot is running")
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -835,6 +843,17 @@ async def wait_for_db(max_retries=5, delay=5):
                 await asyncio.sleep(delay)
     return False
 
+async def run_web_server():
+    config = uvicorn.Config(
+        app,
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8000)),
+        log_level="info",
+        access_log=False
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
 # Main Function
 async def main():
     try:
@@ -842,13 +861,14 @@ async def main():
             logger.critical("Could not establish database connection after multiple attempts")
             return
 
-        await bot.start(os.getenv('DISCORD_TOKEN'))
+        # Run both the bot and web server concurrently
+        await asyncio.gather(
+            bot.start(os.getenv('DISCORD_TOKEN')),
+            run_web_server()
+        )
     except Exception as e:
         logger.critical(f"Bot crashed: {e}", exc_info=True)
     finally:
         if pool:
             await pool.close()
         logger.info("Bot has shut down")
-
-if __name__ == "__main__":
-    asyncio.run(main())
