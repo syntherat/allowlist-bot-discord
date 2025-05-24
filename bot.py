@@ -872,3 +872,6 @@ async def main():
         if pool:
             await pool.close()
         logger.info("Bot has shut down")
+
+if __name__ == "__main__":
+    asyncio.run(main())
